@@ -15,7 +15,7 @@ class Quiz extends Model
     public $timestamps = true;
 
 
-    protected $nullable =[
+    protected $nullable = [
 
     ];
 

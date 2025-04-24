@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Category;
@@ -9,14 +10,15 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Cookie;
 
+use function PHPUnit\Framework\isEmpty;
+
 class QuizController extends Controller
 {
     public function create_quiz(Request $request)
-        {
+    {
         $raw_cookie = $_COOKIE['users_access_token'];
 
         $response = Http::withHeader('Cookie', 'users_access_token='.$raw_cookie)->get("http://192.168.202.71:8888/api/v1/users:current-user/");
-
 
         $validated = $request->validate([
         'name' => 'required|string|max:255',
@@ -37,8 +39,8 @@ class QuizController extends Controller
         try {
             $quiz->description = trim($validated['description']);
             $quiz->details = trim($validated['details']);
+        } catch (\Exception $exception) {
         }
-        catch (\Exception $exception){}
 
         foreach ($validated['questions'] as $question) {
             $new_question = $quiz->questions()->create(['content' => trim($question['content'])]);
@@ -48,9 +50,10 @@ class QuizController extends Controller
         }
 
         return response()->json($quiz, 201);
-        }
+    }
 
-    public function get_quiz_by_id($id){
+    public function get_quiz_by_id($id)
+    {
         $quiz = Quiz::query()->find($id);
 
         if (!$quiz) {
@@ -60,12 +63,14 @@ class QuizController extends Controller
         return response()->json($quiz);
     }
 
-    public function get_categories(){
+    public function get_categories()
+    {
 
         return response()->json(Category::all()->toArray());
     }
 
-    public function get_questions($id){
+    public function get_questions($id)
+    {
         $quiz = Quiz::with('questions')->find($id);
 
         if (!$quiz) {
@@ -77,7 +82,8 @@ class QuizController extends Controller
         return response()->json($quiz->questions->toArray());
     }
 
-    public function check_answer(Request $request){
+    public function check_answer(Request $request)
+    {
         $quiz = Quiz::query()->find($request['quiz_id']);
         $question = $quiz->questions()->find($request['question_id']);
         $answers = $question->answers->toArray();
@@ -91,7 +97,8 @@ class QuizController extends Controller
         return response()->json(['message' => 'Answer not found'], 404);
     }
 
-    public function search_quiz(Request $request){
+    public function search_quiz(Request $request)
+    {
         $request->validate([
             'query' => 'required|string',
             'per_page' => 'nullable|integer|min:1|max:100',
@@ -109,5 +116,24 @@ class QuizController extends Controller
         }
 
         return response()->json($quizzes->paginate($perPage));
+    }
+
+    public function search_quiz_by_category(Request $request, $categoryId)
+    {
+        $perPage = $request->input('per_page', 10); // по умолчанию 10 квизов на страницу
+
+        $quizzes = Quiz::query()->where('category_id', $categoryId)->paginate($perPage);
+        if ($quizzes->total() == 0) {
+            return response()->json(['message' => 'Quizzes with this category not found'], 404);
+        }
+        return response()->json($quizzes);
+    }
+
+    public function get_random_quizzes(Request $request)
+    {
+        $count = $request->input('count', 10);
+        $quizzes = Quiz::query()->inRandomOrder()->limit($count)->get();
+
+        return response()->json($quizzes);
     }
 }
