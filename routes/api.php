@@ -19,7 +19,7 @@ $routes = function () {
     Route::post('/quizzes:check_answer', [QuizController::class, 'check_answer']);
     Route::post('/quizzes:search', [QuizController::class, 'search_quiz']);
     Route::get('/quizzes/by-category/{category_id}', [QuizController::class, 'search_quiz_by_category']);
-    Route::get('/quizzes:random_quizzes', [QuizController::class, 'get_random_quizzes']);
+    Route::get('/quizzes:random-quizzes', [QuizController::class, 'get_random_quizzes']);
 };
 Route::prefix("/api/v1")->group($routes);
 

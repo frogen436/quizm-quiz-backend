@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Cookie;
+use Config;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -16,9 +17,20 @@ class QuizController extends Controller
 {
     public function create_quiz(Request $request)
     {
-        $raw_cookie = $_COOKIE['users_access_token'];
+//        try {
+//            $raw_cookie = $_COOKIE["users_access_token"];
+//        }
+//        catch (\Exception $e) {
+//
+//            return response()->json(['message' => $e->getMessage()], 401);}
 
-        $response = Http::withHeader('Cookie', 'users_access_token='.$raw_cookie)->get("http://192.168.202.71:8888/api/v1/users:current-user/");
+        $token = $request->header('Authorization');
+
+
+        $url = \config('auth_url.url') . "/api/v1/users:current-user/";
+
+
+        $response = Http::withHeader('Cookie', $token)->get($url);
 
         $validated = $request->validate([
         'name' => 'required|string|max:255',
@@ -129,10 +141,9 @@ class QuizController extends Controller
         return response()->json($quizzes);
     }
 
-    public function get_random_quizzes(Request $request)
+    public function get_random_quizzes()
     {
-        $count = $request->input('count', 10);
-        $quizzes = Quiz::query()->inRandomOrder()->limit($count)->get();
+        $quizzes = Quiz::query()->inRandomOrder()->limit(10)->get();
 
         return response()->json($quizzes);
     }
