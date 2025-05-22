@@ -17,18 +17,10 @@ class QuizController extends Controller
 {
     public function create_quiz(Request $request)
     {
-//        try {
-//            $raw_cookie = $_COOKIE["users_access_token"];
-//        }
-//        catch (\Exception $e) {
-//
-//            return response()->json(['message' => $e->getMessage()], 401);}
 
         $token = $request->header('Authorization');
 
-
         $url = \config('auth_url.url') . "/api/v1/users:current-user/";
-
 
         $response = Http::withHeader('Cookie', $token)->get($url);
 
