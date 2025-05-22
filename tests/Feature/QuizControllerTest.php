@@ -4,13 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Quiz;
 use App\Models\Category;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class QuizControllerTest extends TestCase
 {
-    use RefreshDatabase;
 
     #[Test] public function it_returns_paginated_quizzes_for_valid_category()
     {

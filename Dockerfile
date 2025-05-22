@@ -1,9 +1,6 @@
-# Dockerfile
-
-# Используем официальный образ PHP с FPM и необходимыми расширениями
 FROM php:8.2-fpm-alpine
 
-# Устанавливаем системные зависимости и расширения PHP
+# 1) Системные зависимости и расширения PHP
 RUN apk update && apk add --no-cache \
     git \
     unzip \
@@ -13,28 +10,33 @@ RUN apk update && apk add --no-cache \
   && docker-php-ext-install pdo pgsql pdo_pgsql zip \
   && docker-php-ext-enable pgsql pdo_pgsql
 
-# Устанавливаем Composer
+# 2) Composer
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_PREFERS_DIST=1
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Рабочая директория
 WORKDIR /var/www/html
 
-# Копируем проект
-COPY . /var/www/html
-
-# Разрешаем Git безопасно работать с этой директорией (убирает ошибку «dubious ownership»)
+# 3) Git-safe (для VCS-загрузчиков)
 RUN git config --global --add safe.directory /var/www/html
 
-# Устанавливаем зависимости Composer (без dev-пакетов)
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+# 4) Копируем файлы, нужные до composer install
+COPY composer.json composer.lock ./
+COPY artisan ./
+COPY bootstrap bootstrap
+COPY config config
+COPY routes routes
 
-# Копируем пользовательский php.ini для включения расширений (если нужен свой ini)
-COPY docker/php/php.ini /usr/local/etc/php/php.ini
+# 5) Устанавливаем зависимости
+RUN composer install --no-interaction --optimize-autoloader --no-dev --prefer-dist
 
-# Даем права на папки хранения кэша и логов
+# 6) Копируем остальной код (vendor игнорируется через .dockerignore)
+COPY . .
+
+# 7) Права на каталоги
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose порт для FPM
 EXPOSE 9000
-
 CMD ["php-fpm"]
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]
